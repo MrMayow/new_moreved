@@ -17,9 +17,10 @@ class Point:
 
 class Boat:
     def __init__(self, coordinates_array):
-        self.route = self.format_route(coordinates_array)
         self.current_point = Point(0, 0, 0)
         self.is_moving = False
+        self.route = self.format_route(coordinates_array)
+        
 
     def format_route(self, coordinates_array):
         final_route = [self.current_point]
@@ -29,13 +30,13 @@ class Boat:
 
     def start_moving(self):
         self.is_moving = True
-        while self.is_moving and self.current_point_index < len(self.route) - 1:
-            current_point = self.route[self.current_point_index]
-            next_point = self.route[self.current_point_index + 1]
+        while self.is_moving and self.current_point.uid < len(self.route) - 1:
+            current_point = self.current_point
+            next_point = self.route[self.current_point.uid + 1]
             print(f"Moving from {current_point} to {next_point}")
             self.move_to_point(current_point, next_point)
-            self.current_point_index += 1
-            time.sleep(10)
+            self.current_point = next_point
+            time.sleep(3)
         print("Route completed!")
 
     def move_to_point(self, current_point, next_point):
@@ -49,7 +50,7 @@ def start():
     route = list(data.get("route"))
     boat = Boat(route)
     threading.Thread(target=boat.start_moving).start()
-    return jsonify({"status": "Boat started moving", "route_length": len(boat.route - 1)}), 200
+    return jsonify({"status": "Boat started moving", "Point_count": len(boat.route)}), 200
 
 
 def start_web():

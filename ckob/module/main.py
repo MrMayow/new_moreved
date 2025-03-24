@@ -55,10 +55,8 @@ class Ckob:
 
 @app.route('/start', methods=['GET'])
 def start():
-    root_approve = False
-    while not root_approve:
-        ckob = Ckob()
-        ckob.send_random_route()
+    ckob = Ckob()
+    ckob.send_random_route()
 
 
 def start_web():

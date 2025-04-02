@@ -7,6 +7,7 @@ app = Flask(__name__)
 BOAT_START_URL = "http://boat:8000/start_boat"
 ORVD_ROUTE_CHECK_URL = "http://orvd:8000/route-check"
 
+
 class Ckob:
     def __init__(self):
         self.route = []
@@ -53,11 +54,22 @@ class Ckob:
         return jsonify(result), 200
 
 
-@app.route('/start', methods=['GET'])
-def start():
-    ckob = Ckob()
-    ckob.send_random_route()
+ckob = Ckob()
 
+
+@app.route('/log-boat-data', methods=['POST'])
+def log_boat_data():
+    data = request.get_json()
+    boat_pos = data.get("current_pos")
+    sensors_data = data.get("sensors_data")
+    print(f"Boat data log: boat_pos: {boat_pos}, sensors_data: {sensors_data}")
+    return jsonify({"status": "Boat data successfully logged"}), 200
+
+
+@app.route('/start', methods=['GET'])
+def start():    
+    ckob.send_random_route()
+    return jsonify({"status": "CKOB started moving"}), 200
 
 def start_web():
     app.run(host='0.0.0.0', port=8000, threaded=True)

@@ -1,8 +1,13 @@
 from flask import Flask, request, jsonify
 import time
 import threading
+import random
+import requests
 
 app = Flask(__name__)
+
+CKOB_BOAT_DATA_LOG_URL = "http://ckob:8000/log-boat-data"
+ORVD_BOAT_POS_LOG_URL = "http://orvd:8000/log-boat-pos"
 
 
 class Point:
@@ -13,6 +18,9 @@ class Point:
 
     def __repr__(self):
         return f"Point(uid={self.uid}, x={self.x}, y={self.y})"
+    
+    def to_dict(self):
+        return {"uid": self.uid, "x": self.x, "y": self.y}
 
 
 class Boat:
@@ -29,6 +37,7 @@ class Boat:
         return final_route
 
     def start_moving(self):
+        print(f"Boat start moving with route: {self.route}")
         self.is_moving = True
         while self.is_moving and self.current_point.uid < len(self.route) - 1:
             current_point = self.current_point
@@ -36,6 +45,8 @@ class Boat:
             print(f"Moving from {current_point} to {next_point}")
             self.move_to_point(current_point, next_point)
             self.current_point = next_point
+            self.send_data_to_ckob()
+            self.send_data_to_orvd()
             time.sleep(3)
         print("Route completed!")
 
@@ -43,6 +54,31 @@ class Boat:
         print(f"Calculating direction from ({current_point.x}, {current_point.y}) to ({next_point.x}, {next_point.y})")
         print(f"Arrived at ({next_point.x}, {next_point.y})")
 
+    def get_sensors_data(self):
+        radiation = random.randint(0, 4)
+        ph = random.randint(0, 14)
+        return {"radiation": radiation, "ph": ph}
+
+    def send_data_to_ckob(self):
+        try:
+            pos_data = self.current_point.to_dict()  # Преобразуем в словарь
+            sensors_data = self.get_sensors_data()
+            print(f"Send current boat data to CKOB: Pos: {pos_data}, Sensors: {sensors_data}")
+            payload = {"current_pos": pos_data, "sensors_data": sensors_data}
+            response = requests.post(CKOB_BOAT_DATA_LOG_URL, json=payload)
+            json_data = response.json()       
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+        
+    def send_data_to_orvd(self):
+        try:
+            pos_data = self.current_point.to_dict()  # Преобразуем в словарь
+            print(f"Send current boat pos to ORVD: {pos_data}")
+            payload = {"current_pos": pos_data}  # Пример без использования jsonify
+            response = requests.post(ORVD_BOAT_POS_LOG_URL, json=payload)
+            json_data = response.json()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
 @app.route('/start_boat', methods=['POST'])
 def start():
